@@ -19,7 +19,6 @@ optimal_ratio = meta.get('optimal_ratio', 1.12)  # Берем оптимальн
 
 print(f"[ИНФО] Загружена модель со следующими признаками: {features}")
 print(f"[ИНФО] Оптимальное соотношение цены: {optimal_ratio:.2f}x")
-print(f"[ИНФО] ROC-AUC модели: {meta.get('test_roc_auc', 'N/A')}")
 
 
 # === 2. Загрузка данных для предсказания ===
