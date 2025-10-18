@@ -23,7 +23,7 @@ print(f"[ИНФО] ROC-AUC модели: {meta.get('test_roc_auc', 'N/A')}")
 
 
 # === 2. Загрузка данных для предсказания ===
-INPUT_PATH = "data/test_data.csv"
+INPUT_PATH = "data/data.csv"
 df = pd.read_csv(INPUT_PATH, sep=';')
 df = df.drop(columns=["price_bid_local"])
 df.columns = df.columns.str.strip().str.lower()
