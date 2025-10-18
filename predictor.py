@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import joblib
 import os
-
+import json
 
 # === 1. Загрузка модели ===
 MODEL_PATH = "models/bid_model.joblib"
@@ -299,6 +299,49 @@ available_columns = [col for col in output_columns if col in df_final.columns]
 df_final[available_columns].to_csv(OUTPUT_PATH, sep=';', index=False)
 
 print(f"\n[ИНФО] Результаты предсказания сохранены в {OUTPUT_PATH}")
+
+
+# === 14. Сохранение результатов в JSON (для API) ===
+OUTPUT_JSON_PATH = "data/recommendation.json"
+
+# Создаем список всех рекомендаций в требуемом формате
+json_recommendations = []
+
+for idx, row in df_final.iterrows():
+    # Создаем список всех трех стратегий
+    prices = []
+    
+    # Добавляем conservative стратегию
+    prices.append({
+        "amount": int(row['bid_conservative']),
+        "success_probability": float(row['prob_conservative']),
+        "recommended": (row['recommended_strategy'] == 'conservative')
+    })
+    
+    # Добавляем optimal стратегию
+    prices.append({
+        "amount": int(row['bid_optimal']),
+        "success_probability": float(row['prob_optimal']),
+        "recommended": (row['recommended_strategy'] == 'optimal')
+    })
+    
+    # Добавляем aggressive стратегию
+    prices.append({
+        "amount": int(row['bid_aggressive']),
+        "success_probability": float(row['prob_aggressive']),
+        "recommended": (row['recommended_strategy'] == 'aggressive')
+    })
+    
+    json_recommendations.append({
+        "prices": prices
+    })
+
+# Сохраняем в JSON файл
+with open(OUTPUT_JSON_PATH, 'w', encoding='utf-8') as f:
+    json.dump(json_recommendations, f, ensure_ascii=False, indent=2)
+
+print(f"[ИНФО] JSON результаты сохранены в {OUTPUT_JSON_PATH}")
+print(f"[ИНФО] Создано {len(json_recommendations)} JSON записей")
 
 # Финальная сводка
 print(f"\n=== Финальная сводка ===")
