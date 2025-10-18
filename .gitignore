@@ -7,4 +7,5 @@ data/*
 !data/dataset.csv
 !data/test_data.csv
 !data/recommendation.csv
+!data/recommendation.json
 
