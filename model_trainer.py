@@ -102,7 +102,7 @@ print(f"[INFO] Applied SMOTE: {len(X_train_res)} samples after balancing (from {
 print(f"[INFO] Class balance after SMOTE: {np.bincount(y_train_res)}")
 
 # === 8. Постройка конвеера ===
-base_clf = LogisticRegression(solver='lbfgs', max_iter=2000, class_weight='balanced', random_state=RANDOM_STATE)
+base_clf = LogisticRegression(solver='lbfgs', max_iter=2000, random_state=RANDOM_STATE)
 calibrated = CalibratedClassifierCV(estimator=base_clf, cv=3, method='isotonic')
 
 pipeline = Pipeline([

@@ -5,8 +5,8 @@ import numpy as np
 import joblib
 import os
 
-# === 1. Загрузка модели ===
 
+# === 1. Загрузка модели ===
 MODEL_PATH = "models/bid_model.joblib"
 if not os.path.exists(MODEL_PATH):
     raise FileNotFoundError(f"Модель не найдена: {MODEL_PATH}")
@@ -17,15 +17,16 @@ meta = model_data["meta"]
 features = meta["features"]
 ratios = meta["ratio_percentiles"]  # q25, q50, q75
 
-# === 2. Загрузка данных для предсказания ===
 
+# === 2. Загрузка данных для предсказания ===
 INPUT_PATH = "data/test_data.csv"
 df = pd.read_csv(INPUT_PATH, sep=';')
+df = df.drop(columns=["price_bid_local"])
 df.columns = df.columns.str.strip().str.lower()
 print(f"[INFO] Loaded {len(df)} rows for prediction")
 
-# === 3. Временные признаки (только час и месяц) ===
 
+# === 3. Временные признаки (только час и месяц) ===
 def process_timestamp(ts):
     try:
         date, time = ts.split(" ")
@@ -38,18 +39,19 @@ def process_timestamp(ts):
 df[['hour','month']] = df['order_timestamp'].apply(lambda x: pd.Series(process_timestamp(str(x))))
 df[['hour','month']] = df[['hour','month']].fillna(0)
 
-# === 4. Новые признаки ===
 
-df['pickup_to_trip_ratio'] = df['pickup_in_meters'] / (df['distance_in_meters'] + 1)
-df['price_diff'] = df['price_bid_local'] - df['price_start_local']
-df['price_ratio'] = df['price_bid_local'] / (df['price_start_local'] + 1e-6)
+# === 4. Новые признаки ===
+df["pickup_to_trip_ratio"] = df["pickup_in_meters"] / (df["distance_in_meters"] + 1)
+df["price_diff"] = 0.0 # placeholder
+df["price_ratio"] = 1.0 # placeholder
+
 
 # === 5. Гарантируем наличие всех признаков ===
-
 for f in features:
     if f not in df.columns:
         df[f] = 0.0
 X_base = df[features].fillna(0)
+
 
 # === 6. Генерация трёх ценовых вариантов () ===
 def generate_candidate_bids(base_price):
@@ -59,6 +61,7 @@ def generate_candidate_bids(base_price):
 
     # округление до ближайших 5 ₽
     return [int(round(x/5)*5) for x in [q_client, q_medium, q_driver]]
+
 # повторяем строки и создаём candidate
 df_expanded = df.loc[df.index.repeat(3)].copy()
 df_expanded = df_expanded.reset_index(drop=True)
@@ -73,6 +76,7 @@ df_expanded['price_bid_local'] = candidate_prices.flatten()
 df_expanded['price_diff'] = df_expanded['price_bid_local'] - df_expanded['price_start_local']
 df_expanded['price_ratio'] = df_expanded['price_bid_local'] / (df_expanded['price_start_local'] + 1e-6)
 
+
 # === 7. Векторное предсказание вероятности ===
 X_expanded = df_expanded[features]
 df_expanded['probability'] = model.predict_proba(X_expanded)[:,1]
@@ -82,8 +86,11 @@ min_ratio = 0.95
 mask_low = df_expanded['price_bid_local'] < df_expanded['price_start_local'] * min_ratio
 df_expanded.loc[mask_low, 'probability'] = -1
 
-# Выбираем лучший вариант по вероятности
-df_best = df_expanded.loc[df_expanded.groupby('original_index')['probability'].idxmax()]
+# === Оптимизация по ожидаемому доходу ===
+df_expanded["expected_revenue"] = df_expanded["price_bid_local"] * df_expanded["probability"]
+
+# Для каждого исходного заказа выбираем bid с максимальным ожидаемым доходом
+df_best = df_expanded.loc[df_expanded.groupby("original_index")["expected_revenue"].idxmax()]
 
 
 # === 8. Объединие результатов с исходным DataFrame ===
@@ -97,9 +104,9 @@ for c in ['client','medium','driver']:
     df_final[f'bid_{c}'] = grp['price_bid_local'].first()
     df_final[f'prob_{c}'] = grp['probability'].first()
 
-# === 9. Сохранение в CSV ===
 
-OUTPUT_PATH = "data/new_orders_with_bid_v2_vectorized.csv"
+# === 9. Сохранение в CSV ===
+OUTPUT_PATH = "data/recommendation.csv"
 columns_to_save = list(df.columns[:8]) + [
 'recommended_bid','probability',
 'bid_client','prob_client',

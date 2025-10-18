@@ -1,1 +1,10 @@
 /.venv
+
+models/*
+data/*
+
+!models/bid_model.joblib
+!data/dataset.csv
+!data/test_data.csv
+!data/recommendation.csv
+
