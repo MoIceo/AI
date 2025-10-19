@@ -24,7 +24,7 @@ print(f"[ИНФО] Оптимальное соотношение цены: {opti
 # === 2. Загрузка данных для предсказания ===
 INPUT_PATH = "data/data.csv"
 df = pd.read_csv(INPUT_PATH, sep=';')
-df = df.drop(columns=["price_bid_local"])
+#df = df.drop(columns=["price_bid_local"])
 df.columns = df.columns.str.strip().str.lower()
 print(f"[ИНФО] Загружено {len(df)} строк для предсказания")
 
@@ -48,7 +48,7 @@ df["pickup_to_trip_ratio"] = df["pickup_in_meters"] / (df["distance_in_meters"] 
 df['total_distance_km'] = (df['pickup_in_meters'] + df['distance_in_meters']) / 1000
 df['total_time_min'] = (df['pickup_in_seconds'] + df['duration_in_seconds']) / 60
 
-# Пиковые часы (добавляем, т.к. это есть в features)
+# Пиковые часы
 df['is_peak'] = ((df['hour'] >= 7) & (df['hour'] <= 10)) | ((df['hour'] >= 17) & (df['hour'] <= 20))
 df['is_peak'] = df['is_peak'].astype(int)
 
@@ -74,8 +74,6 @@ for f in features:
             df[f] = df['distance_in_meters'] * 1.0  # Базовое значение
         else:
             df[f] = 0.0
-        print(f"[ПРЕДУПРЕЖДЕНИЕ] Создан отсутствующий признак: {f}")
-
 print(f"[ИНФО] Все необходимые признаки созданы")
 
 
@@ -214,7 +212,7 @@ for strategy in ['conservative', 'optimal', 'aggressive']:
     print(f"  {strategy:12}: соотношение {avg_ratio:.3f}x, вероятность {avg_prob:.3f}")
 
 
-# === 12. ПРАВИЛЬНЫЙ расчет доходов ===
+# === 12. Расчет доходов ===
 print(f"\n=== Анализ доходности ===")
 
 # Способ 1: Ожидаемая доходность (с учетом вероятности)
