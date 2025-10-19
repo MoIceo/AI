@@ -6,6 +6,11 @@ data/*
 !models/bid_model.joblib
 !data/dataset.csv
 !data/test_data.csv
+!data/data.csv
 !data/recommendation.csv
 !data/recommendation.json
+
+!data/recommendation_example.json
+!data/test_data_example.csv
+!data/recommendation_example.json
 
